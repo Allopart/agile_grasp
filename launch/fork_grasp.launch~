@@ -1,6 +1,6 @@
 <launch>
-	<node name="find_grasps" pkg="agile_grasp" type="find_grasps" output="screen">
-  	<param name="cloud_topic" value="/dish/final/pcl" />
+	<node name="fork_grasps" pkg="agile_grasp" type="find_grasps" output="screen">
+  	<param name="cloud_topic" value="/fork/pcl_seg/pcl" />
     <param name="cloud_frame" value="/camera_rgb_optical_frame" />
     <param name="cloud_type" value="0" />
     <param name="svm_file_name" value="$(find agile_grasp)/svm_032015_20_20_same" />

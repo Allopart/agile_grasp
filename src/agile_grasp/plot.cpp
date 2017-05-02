@@ -1,124 +1,6 @@
 #include <agile_grasp/plot.h>
 
 
-void Plot::plotFingers(const std::vector<Handle>& handle_list, const PointCloud::Ptr& cloud,
-  std::string str, double outer_diameter, double hand_depth)
-{
-  const int WIDTH = pcl::visualization::PCL_VISUALIZER_LINE_WIDTH;
-
-  boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = createViewer(str);
-
-  addCloudToViewer(viewer, cloud, "cloud");
-
-  std::vector<GraspHypothesis> hand_list;
-  std::vector<GraspHypothesis> center_hand_list;
-  for (int i = 0; i < handle_list.size(); i++)
-  {
-    const std::vector<int>& inliers = handle_list[i].getInliers();
-    const std::vector<GraspHypothesis>& hands = handle_list[i].getHandList();
-    GraspHypothesis center_hand(handle_list[i].getAxis(), handle_list[i].getApproach(), handle_list[i].getBinormal(),
-      handle_list[i].getCenter(), handle_list[i].getCenter(), 0.0, Eigen::Matrix3Xd::Zero(3,0), std::vector<int>(),
-      std::vector<int>(), 0);
-    center_hand_list.push_back(center_hand);
-
-    for (int j = 0; j < inliers.size(); j++)
-    {
-      hand_list.push_back(hands[inliers[j]]);
-    }
-  }
-
-  PointCloud::Ptr cloud_fingers(new PointCloud);
-  cloud_fingers = createFingersCloud(hand_list, outer_diameter, hand_depth);
-  addCloudToViewer(viewer, cloud_fingers, "fingers", 3);
-
-  PointCloud::Ptr center_cloud_fingers(new PointCloud);
-  center_cloud_fingers = createFingersCloud(center_hand_list, outer_diameter, hand_depth);
-  addCloudToViewer(viewer, center_cloud_fingers, "center_fingers", 3);
-
-  runViewer(viewer);
-}
-
-
-void Plot::plotFingers(const std::vector<GraspHypothesis>& hand_list, const PointCloud::Ptr& cloud,
-  std::string str, double outer_diameter, double hand_depth)
-{
-  const int WIDTH = pcl::visualization::PCL_VISUALIZER_LINE_WIDTH;
-
-  boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = createViewer(str);
-
-  addCloudToViewer(viewer, cloud, "cloud");
-
-  PointCloud::Ptr cloud_fingers(new PointCloud);
-  cloud_fingers = createFingersCloud(hand_list, outer_diameter, hand_depth);
-  addCloudToViewer(viewer, cloud_fingers, "fingers", 3);
-
-  runViewer(viewer);
-}
-
-
-PointCloud::Ptr Plot::createFingersCloud(const std::vector<GraspHypothesis>& hand_list,
-  double outer_diameter, double hand_depth)
-{
-  PointCloud::Ptr cloud_fingers(new PointCloud);
-
-  for (int i = 0; i < hand_list.size(); i++)
-  {
-    Eigen::Vector3d bottom = hand_list[i].getGraspBottom() - hand_depth * hand_list[i].getApproach();
-    pcl::PointXYZRGBA pc = eigenVector3dToPointXYZRGBA(bottom);
-    setPointColor(hand_list[i], pc);
-
-    double width = outer_diameter;
-    double hw = 0.5 * width;
-    double step = hw / 30.0;
-    Eigen::Vector3d left_bottom = bottom + hw * hand_list[i].getBinormal();
-    Eigen::Vector3d right_bottom = bottom - hw * hand_list[i].getBinormal();
-    pcl::PointXYZRGBA p1 = eigenVector3dToPointXYZRGBA(left_bottom);
-    pcl::PointXYZRGBA p2 = eigenVector3dToPointXYZRGBA(right_bottom);
-    setPointColor(hand_list[i], p1);
-    setPointColor(hand_list[i], p2);
-    cloud_fingers->points.push_back(pc);
-    cloud_fingers->points.push_back(p1);
-    cloud_fingers->points.push_back(p2);
-
-    // Draw the hand base.
-    for (double j=step; j < hw; j+=step)
-    {
-      Eigen::Vector3d lb, rb, a;
-      lb = bottom + j * hand_list[i].getBinormal();
-      rb = bottom - j * hand_list[i].getBinormal();
-      a = bottom - j * hand_list[i].getApproach();
-      pcl::PointXYZRGBA plb = eigenVector3dToPointXYZRGBA(lb);
-      setPointColor(hand_list[i], plb);
-      pcl::PointXYZRGBA prb = eigenVector3dToPointXYZRGBA(rb);
-      setPointColor(hand_list[i], prb);
-      pcl::PointXYZRGBA pa = eigenVector3dToPointXYZRGBA(a);
-      setPointColor(hand_list[i], pa);
-      cloud_fingers->points.push_back(plb);
-      cloud_fingers->points.push_back(prb);
-      cloud_fingers->points.push_back(pa);
-    }
-
-    // Draw the fingers.
-    double dist = 0.06;
-    step = dist / 40.0;
-    for (double j=step; j < dist; j+=step)
-    {
-      Eigen::Vector3d lt, rt;
-      lt = left_bottom + j * hand_list[i].getApproach();
-      rt = right_bottom + j * hand_list[i].getApproach();
-      pcl::PointXYZRGBA plt = eigenVector3dToPointXYZRGBA(lt);
-      setPointColor(hand_list[i], plt);
-      pcl::PointXYZRGBA prt = eigenVector3dToPointXYZRGBA(rt);
-      setPointColor(hand_list[i], prt);
-      cloud_fingers->points.push_back(plt);
-      cloud_fingers->points.push_back(prt);
-    }
-  }
-
-  return cloud_fingers;
-}
-
-
 void Plot::plotHands(const std::vector<GraspHypothesis>& hand_list,
 	const std::vector<GraspHypothesis>& antipodal_hand_list, const PointCloud::Ptr& cloud, std::string str,
 	bool use_grasp_bottom)
@@ -145,10 +27,14 @@ void Plot::plotSamples(const std::vector<int>& index_list, const PointCloud::Ptr
 	for (int i = 0; i < index_list.size(); i++)
 		samples_cloud->points.push_back(cloud->points[index_list[i]]);
 
-	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = createViewer("Samples");
-	addCloudToViewer(viewer, cloud, "cloud");
-	addCloudToViewer(viewer, samples_cloud, "samples");
-	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "samples");
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = createViewer("Samples");  
+	viewer->addPointCloud<pcl::PointXYZ>(cloud, "registered point cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,
+		"registered point cloud");
+	viewer->addPointCloud<pcl::PointXYZ>(samples_cloud, "samples cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "samples cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0,
+		"samples cloud");
 
 	runViewer(viewer);
 }
@@ -157,7 +43,9 @@ void Plot::plotSamples(const std::vector<int>& index_list, const PointCloud::Ptr
 void Plot::plotLocalAxes(const std::vector<Quadric>& quadric_list, const PointCloud::Ptr& cloud)
 {
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = createViewer("Local Axes");
-	addCloudToViewer(viewer, cloud, "cloud");
+	viewer->addPointCloud<pcl::PointXYZ>(cloud, "registered point cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,
+		"registered point cloud");
 
 	for (int i = 0; i < quadric_list.size(); i++)
 		quadric_list[i].plotAxes((void*) &viewer, i);
@@ -179,9 +67,17 @@ void Plot::plotCameraSource(const Eigen::VectorXi& pts_cam_source_in, const Poin
 			right_cloud->points.push_back(cloud->points[i]);
 	}
 		
-	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = createViewer("Camera Sources");
-	addCloudToViewer(viewer, left_cloud, "left_cloud");
-	addCloudToViewer(viewer, right_cloud, "right_cloud");
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = createViewer("Camera Sources");  
+	viewer->addPointCloud<pcl::PointXYZ>(left_cloud, "left point cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,
+		"left point cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0,
+		"left point cloud");
+	viewer->addPointCloud<pcl::PointXYZ>(right_cloud, "right point cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,
+		"right point cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0,
+		"right point cloud");
 	runViewer(viewer);
 }
 
@@ -223,15 +119,6 @@ PointCloudNormal::Ptr Plot::createNormalsCloud(
 }
 
 
-void Plot::addCloudToViewer(boost::shared_ptr<pcl::visualization::PCLVisualizer>& viewer,
-  const PointCloud::Ptr& cloud, const std::string& name, int point_size)
-{
-  pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGBA> rgb(cloud);
-  viewer->addPointCloud<pcl::PointXYZRGBA>(cloud, rgb, name);
-  viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, point_size, name);
-}
-
-
 void Plot::addCloudNormalsToViewer(boost::shared_ptr<pcl::visualization::PCLVisualizer>& viewer,
 	const PointCloudNormal::Ptr& cloud, double line_width, double* color_cloud,
 	double* color_normals, const std::string& cloud_name, const std::string& normals_name)
@@ -256,7 +143,11 @@ void Plot::plotHandsHelper(const PointCloudNormal::Ptr& hands_cloud,
 
 	std::string title = "Hands: " + str;
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = createViewer(title);  
-	addCloudToViewer(viewer, cloud, "cloud");
+	viewer->addPointCloud<pcl::PointXYZ>(cloud, "registered point cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,
+		"registered point cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 0.8, 0.0,
+		"registered point cloud");
 
 	double green[3] = { 0.0, 1.0, 0.0 };
 	double cyan[3] = { 0.0, 0.4, 0.8 };
@@ -436,7 +327,11 @@ void Plot::plotHandles(const std::vector<Handle>& handle_list, const PointCloud:
 	viewer->setBackgroundColor(1, 1, 1);
   //viewer->setPosition(0, 0);
   //viewer->setSize(640, 480);  
-	addCloudToViewer(viewer, cloud, "cloud");
+	viewer->addPointCloud<pcl::PointXYZ>(cloud, "registered point cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1,
+			"registered point cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0,
+			"registered point cloud");
 
 	for (int i = 0; i < clouds.size(); i++)
 	{
@@ -508,33 +403,4 @@ visualization_msgs::Marker Plot::createMarker(const std::string& frame)
   marker.lifetime = ros::Duration(marker_lifetime_);
   marker.action = visualization_msgs::Marker::ADD;
   return marker;
-}
-
-
-void Plot::setPointColor(const GraspHypothesis& hand, pcl::PointXYZRGBA& p)
-{
-  p.a = 128;
-
-  if (hand.isFullAntipodal())
-  {
-    p.r = 0;
-    p.g = 255;
-    p.b = 0;
-  }
-  else
-  {
-    p.r = 255;
-    p.g = 0;
-    p.b = 0;
-  }
-}
-
-
-pcl::PointXYZRGBA Plot::eigenVector3dToPointXYZRGBA(const Eigen::Vector3d& v)
-{
-  pcl::PointXYZRGBA p;
-  p.x = v(0);
-  p.y = v(1);
-  p.z = v(2);
-  return p;
 }

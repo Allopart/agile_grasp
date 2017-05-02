@@ -24,6 +24,10 @@ const std::string PLOT_MODES[3] = {"none", "pcl", "rviz"};
 
 int main(int argc, char** argv)
 {
+  // Wait for agile_grasp launcher to print parameters
+  sleep(3);
+
+
   // initialize ROS
   ros::init(argc, argv, "find_grasps");
   ros::NodeHandle node("~");

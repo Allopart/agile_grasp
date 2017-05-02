@@ -54,7 +54,7 @@
 #include <agile_grasp/learning.h>
 #include <agile_grasp/plot.h>
 
-typedef pcl::PointCloud<pcl::PointXYZRGBA> PointCloud;
+typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 
 
 /** Localization class
@@ -258,12 +258,6 @@ public:
 		visuals_frame_ = frame;
 	}
 	
-	/** constants for plotting modes */
-  static const int NO_PLOTTING = 0; ///< no plotting
-  static const int PCL_PLOTTING = 1; ///< plotting in PCL
-  static const int PCL_PLOTTING_FINGERS = 2; ///< plotting in PCL, plots hands with fingers
-  static const int RVIZ_PLOTTING = 3; ///< plotting in Rviz
-
 
 private:
 
@@ -346,6 +340,11 @@ private:
 	bool filters_boundaries_; ///< whether grasp hypotheses close to the workspace boundaries are filtered out
 	int plotting_mode_; ///< what plotting mode is used
 	std::string visuals_frame_; ///< visualization frame for Rviz
+	
+	/** constants for plotting modes */
+	static const int NO_PLOTTING = 0; ///< no plotting
+	static const int PCL_PLOTTING = 1; ///< plotting in PCL
+	static const int RVIZ_PLOTTING = 2; ///< plotting in Rviz
 };
 
 #endif

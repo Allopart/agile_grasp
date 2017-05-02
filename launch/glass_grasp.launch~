@@ -1,7 +1,7 @@
 <launch>
-	<node name="find_grasps" pkg="agile_grasp" type="find_grasps" output="screen">
-  	<param name="cloud_topic" value="/dish/final/pcl" />
-    <param name="cloud_frame" value="/camera_rgb_optical_frame" />
+	<node name="glass_grasps" pkg="agile_grasp" type="find_grasps" output="screen">
+  	<param name="cloud_topic" value="/glass/final/pcl" />
+    <param name="cloud_frame" value="/xtion_rgb_optical_frame" />
     <param name="cloud_type" value="0" />
     <param name="svm_file_name" value="$(find agile_grasp)/svm_032015_20_20_same" />
     <param name="num_samples" value="4000" />

@@ -46,8 +46,7 @@
 #include <agile_grasp/rotating_hand.h>
 
 
-typedef pcl::PointCloud<pcl::PointXYZRGBA> PointCloud;
-
+typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 
 /** HandSearch class
  *
@@ -76,10 +75,10 @@ class HandSearch
 		*/
     HandSearch(double finger_width, double hand_outer_diameter, 
       double hand_depth, double hand_height, double init_bite, int num_threads, 
-      int num_samples, const Eigen::Matrix4d& cam_tf_left, bool plots_hands) : finger_width_(finger_width), 
+      int num_samples, bool plots_hands) : finger_width_(finger_width), 
       hand_outer_diameter_(hand_outer_diameter), hand_depth_(hand_depth), 
       hand_height_(hand_height), init_bite_(init_bite), 
-      num_threads_(num_threads), num_samples_(num_samples), cam_tf_left_(cam_tf_left), 
+      num_threads_(num_threads), num_samples_(num_samples), 
       plots_hands_(plots_hands), plots_samples_(false), 
       plots_local_axes_(false), uses_determinstic_normal_estimation_(false), 
       nn_radius_taubin_(0.03), nn_radius_hands_(0.08) { }
@@ -115,7 +114,7 @@ class HandSearch
 		 * \return a list of quadratic surfaces
 		*/
     std::vector<Quadric> findQuadrics(const PointCloud::Ptr cloud, const Eigen::VectorXi& pts_cam_source,
-			const pcl::KdTreeFLANN<pcl::PointXYZRGBA>& kdtree, const std::vector<int>& indices);
+			const pcl::KdTreeFLANN<pcl::PointXYZ>& kdtree, const std::vector<int>& indices);
 		
 		/**
 		 * \brief Find grasp hypotheses in a point cloud given a list of quadratic surfaces.
@@ -128,7 +127,7 @@ class HandSearch
 		*/
     std::vector<GraspHypothesis> findHands(const PointCloud::Ptr cloud, const Eigen::VectorXi& pts_cam_source,
 			const std::vector<Quadric>& quadric_list, const Eigen::VectorXi& hands_cam_source, 
-      const pcl::KdTreeFLANN<pcl::PointXYZRGBA>& kdtree);
+      const pcl::KdTreeFLANN<pcl::PointXYZ>& kdtree);
     
     Eigen::Matrix4d cam_tf_left_, cam_tf_right_; ///< camera poses
     

@@ -33,7 +33,6 @@
 #define PLOT_H
 
 #include <pcl/visualization/pcl_visualizer.h>
-#include <pcl/visualization/point_cloud_color_handlers.h>
 
 #include <geometry_msgs/Point.h>
 #include <ros/ros.h>
@@ -44,8 +43,8 @@
 #include <agile_grasp/quadric.h>
 
 
+typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 typedef pcl::PointCloud<pcl::PointNormal> PointCloudNormal;
-typedef pcl::PointCloud<pcl::PointXYZRGBA> PointCloud;
 
 /** Plot class
 * 
@@ -56,26 +55,6 @@ typedef pcl::PointCloud<pcl::PointXYZRGBA> PointCloud;
 class Plot
 {
 	public:
-
-    /**
-     * \brief Plot a list of handles.
-     * \param hand_list the list of grasps
-     * \param cloud the point cloud to be plotted
-     * \param str the title of the plot window
-     * \param outer_diameter the width of the drawn grasps
-     */
-    void plotFingers(const std::vector<Handle>& handle_list, const PointCloud::Ptr& cloud, std::string str,
-      double outer_diameter = 0.09, double hand_depth = 0.09);
-
-    /**
-     * \brief Plot a list of grasps.
-     * \param hand_list the list of grasps
-     * \param cloud the point cloud to be plotted
-     * \param str the title of the plot window
-     * \param outer_diameter the width of the drawn grasps
-     */
-    void plotFingers(const std::vector<GraspHypothesis>& hand_list, const PointCloud::Ptr& cloud, std::string str,
-      double outer_diameter = 0.09, double hand_depth = 0.09);
 		
 		/**
 		 * \brief Plot a set of grasp hypotheses.
@@ -152,14 +131,6 @@ class Plot
 		
 	private:
 		
-		/**
-     * \brief Create a point cloud that stores the visual representations of the grasps.
-     * \param hand_list the list of grasps to be be stored in the point cloud
-     * \param outer_diameter the outer diameter of the visual grasp representation
-     */
-		PointCloud::Ptr createFingersCloud(const std::vector<GraspHypothesis>& hand_list, double outer_diameter,
-		  double hand_depth);
-
 		/** 
 		 * \brief Create a point cloud with normals that represent the approach vectors for a set of 
 		 * grasp hypotheses.
@@ -172,14 +143,6 @@ class Plot
 		PointCloudNormal::Ptr createNormalsCloud(const std::vector<GraspHypothesis>& hand_list,
 			bool plots_only_antipodal, bool plots_grasp_bottom);
 		
-		/**
-     * \brief Add a point cloud to a PCL visualizer.
-     * \param viewer the PCL visualizer that the cloud is added to
-     * \param cloud the cloud to be added
-    */
-		void addCloudToViewer(boost::shared_ptr<pcl::visualization::PCLVisualizer>& viewer,
-		  const PointCloud::Ptr& cloud, const std::string& name, int point_size = 1);
-
 		/** 
 		 * \brief Add a point cloud with normals to a PCL visualizer.
 		 * \param viewer the PCL visualizer that the cloud is added to
@@ -237,19 +200,6 @@ class Plot
 		*/
 		visualization_msgs::Marker createMarker(const std::string& frame);
 		
-		/**
-     * \brief Set the color of a point.
-     * \param hand the grasp that the point belongs to
-     * \param p the point for which the color is set
-     */
-    void setPointColor(const GraspHypothesis& hand, pcl::PointXYZRGBA& p);
-
-    /**
-     * \brief Convert an Eigen vector to a PCL point.
-     * \param v the Eigen vector to be converted
-     */
-    pcl::PointXYZRGBA eigenVector3dToPointXYZRGBA(const Eigen::Vector3d& v);
-
 		ros::Publisher hypotheses_pub_; ///< ROS publisher for grasp hypotheses (Rviz)
 		ros::Publisher antipodal_pub_; ///< ROS publisher for antipodal grasps (Rviz)
 		ros::Publisher handles_pub_; ///< ROS publisher for handles (Rviz)

@@ -53,10 +53,10 @@ std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& 
     std::cout << "Finding point cloud clusters ... \n";
         
 		// Create the segmentation object for the planar model and set all the parameters
-		pcl::SACSegmentation<pcl::PointXYZRGBA> seg;
+		pcl::SACSegmentation<pcl::PointXYZ> seg;
 		pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
 		pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-		pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZRGBA>());
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZ>());
 		seg.setOptimizeCoefficients(true);
 		seg.setModelType(pcl::SACMODEL_PLANE);
 		seg.setMethodType(pcl::SAC_RANSAC);
@@ -77,7 +77,7 @@ std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& 
       << " data points." << std::endl;
 
 		// Extract the nonplanar inliers
-		pcl::ExtractIndices<pcl::PointXYZRGBA> extract;
+		pcl::ExtractIndices<pcl::PointXYZ> extract;
 		extract.setInputCloud(cloud);
 		extract.setIndices(inliers);
 		extract.setNegative(true);
@@ -109,7 +109,7 @@ std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& 
 		
 	// find hand configurations
   HandSearch hand_search(finger_width_, hand_outer_diameter_, hand_depth_, hand_height_, init_bite_, num_threads_, 
-		num_samples_, cam_tf_left_, plots_hands);
+		num_samples_, plots_hands);
 	hand_list = hand_search.findHands(cloud, pts_cam_source, indices, cloud_plot, calculates_antipodal, uses_clustering);
 
 	// remove hands at boundaries of workspace
@@ -125,11 +125,7 @@ std::vector<GraspHypothesis> Localization::localizeHands(const PointCloud::Ptr& 
 
 	if (plotting_mode_ == PCL_PLOTTING)
 	{
-		plot_.plotHands(hand_list, cloud_plot, "Hands");
-	}
-	else if (plotting_mode_ == PCL_PLOTTING_FINGERS)
-	{
-	  plot_.plotFingers(hand_list, cloud_plot, "Hands");
+		plot_.plotHands(hand_list, cloud_plot, "");
 	}
 	else if (plotting_mode_ == RVIZ_PLOTTING)
 	{
@@ -152,17 +148,9 @@ std::vector<GraspHypothesis> Localization::predictAntipodalHands(const std::vect
 	std::cout << " runtime: " << omp_get_wtime() - t0 << " sec\n";
 	std::cout << antipodal_hands.size() << " antipodal hand configurations found\n"; 
   if (plotting_mode_ == PCL_PLOTTING)
-  {
 		plot_.plotHands(hand_list, antipodal_hands, cloud_, "Antipodal Hands");
-  }
-  else if (plotting_mode_ == PCL_PLOTTING_FINGERS)
-  {
-    plot_.plotFingers(antipodal_hands, cloud_, "Antipodal Hands");
-  }
 	else if (plotting_mode_ == RVIZ_PLOTTING)
-	{
 		plot_.plotGraspsRviz(antipodal_hands, visuals_frame_, true);
-	}
 	return antipodal_hands;
 }
 
@@ -181,9 +169,9 @@ std::vector<GraspHypothesis> Localization::localizeHands(const std::string& pcd_
 
 	// load point clouds
 	PointCloud::Ptr cloud_left(new PointCloud);
-	if (pcl::io::loadPCDFile<pcl::PointXYZRGBA>(pcd_filename_left, *cloud_left) == -1) //* load the file
+	if (pcl::io::loadPCDFile<pcl::PointXYZ>(pcd_filename_left, *cloud_left) == -1) //* load the file
 	{
-		std::cout << "Couldn't read pcd_filename_left file: " << pcd_filename_left << " \n";
+		PCL_ERROR("Couldn't read pcd_filename_left file \n");
 		std::vector<GraspHypothesis> hand_list(0);
 		return hand_list;
 	}
@@ -195,9 +183,9 @@ std::vector<GraspHypothesis> Localization::localizeHands(const std::string& pcd_
 	PointCloud::Ptr cloud_right(new PointCloud);
 	if (pcd_filename_right.length() > 0)
 	{
-		if (pcl::io::loadPCDFile<pcl::PointXYZRGBA>(pcd_filename_right, *cloud_right) == -1) //* load the file
+		if (pcl::io::loadPCDFile<pcl::PointXYZ>(pcd_filename_right, *cloud_right) == -1) //* load the file
 		{
-		  std::cout << "Couldn't read pcd_filename_left file: " << pcd_filename_right << " \n";
+			PCL_ERROR("Couldn't read pcd_filename_right file \n");
 			std::vector<GraspHypothesis> hand_list(0);
 			return hand_list;
 		}
@@ -224,7 +212,7 @@ void Localization::filterWorkspace(const PointCloud::Ptr& cloud_in, const Eigen:
 	for (int i = 0; i < cloud_in->points.size(); i++)
 	{
 //    std::cout << "i: " << i << "\n";
-		const pcl::PointXYZRGBA& p = cloud_in->points[i];
+		const pcl::PointXYZ& p = cloud_in->points[i];
 		if (p.x >= workspace_(0) && p.x <= workspace_(1) && p.y >= workspace_(2) && p.y <= workspace_(3)
 				&& p.z >= workspace_(4) && p.z <= workspace_(5))
 		{
@@ -333,7 +321,7 @@ void Localization::voxelizeCloud(const PointCloud::Ptr& cloud_in, const Eigen::V
 	Eigen::VectorXi pts_cam_source(bins_left.size() + bins_right.size());
 	for (int i = 0; i < bins_left.size(); i++)
 	{
-		pcl::PointXYZRGBA p;
+		pcl::PointXYZ p;
 		p.x = voxels_left(0, i);
 		p.y = voxels_left(1, i);
 		p.z = voxels_left(2, i);
@@ -342,7 +330,7 @@ void Localization::voxelizeCloud(const PointCloud::Ptr& cloud_in, const Eigen::V
 	}
 	for (int i = 0; i < bins_right.size(); i++)
 	{
-		pcl::PointXYZRGBA p;
+		pcl::PointXYZ p;
 		p.x = voxels_right(0, i);
 		p.y = voxels_right(1, i);
 		p.z = voxels_right(2, i);
@@ -393,16 +381,8 @@ std::vector<Handle> Localization::findHandles(const std::vector<GraspHypothesis>
 	HandleSearch handle_search;
 	std::vector<Handle> handles = handle_search.findHandles(hand_list, min_inliers, min_length);
 	if (plotting_mode_ == PCL_PLOTTING)
-	{
 		plot_.plotHandles(handles, cloud_, "Handles");
-	}
-	else if (plotting_mode_ == PCL_PLOTTING_FINGERS)
-	{
-		plot_.plotFingers(handles, cloud_, "Handles");
-	}
 	else if (plotting_mode_ == RVIZ_PLOTTING)
-	{
 		plot_.plotHandlesRviz(handles, visuals_frame_);
-	}
 	return handles;
 }
